@@ -1,0 +1,7 @@
+{
+  "name": "Virtual Style AI",
+  "description": "Aplikácia pre virtuálne skúšanie oblečenia pomocou AI.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

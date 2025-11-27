@@ -1,0 +1,10 @@
+{
+  "short_name": "VirtualStyle",
+  "name": "Virtual Style AI",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "orientation": "portrait"
+}
