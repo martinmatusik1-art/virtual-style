@@ -2,9 +2,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const ai = new GoogleGenerativeAI(process.env.API_KEY!);
 
-/**
- * Sends the person image and clothing image to Gemini to generate a composite image.
- */
 export const generateTryOnImage = async (
   personBase64: string,
   personMime: string,
@@ -23,8 +20,8 @@ export const generateTryOnImage = async (
       Requirements:
       1. Preserve the person's identity, pose, body shape, and skin tone exactly as they appear in the first image.
       2. Replace the person's current clothing with the garment from the second image.
-      3. Adapt the garment to fit the person's body naturally (wrinkles, lighting, drape).
-      4. The background should remain consistent with the person's original photo if possible, or be a neutral studio background.
+      3. Adapt the garment to fit the person's body naturally.
+      4. Background should stay consistent.
       5. Output ONLY the image.
     `;
 
@@ -65,9 +62,7 @@ export const generateTryOnImage = async (
       }
     }
 
-    throw new Error(
-      "Model did not return an image. It might have refused the request due to safety policies."
-    );
+    throw new Error("Model did not return an image.");
   } catch (error) {
     console.error("Gemini API Error:", error);
     throw error;
