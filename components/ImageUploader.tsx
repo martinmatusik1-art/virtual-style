@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { ImageFile } from '../types';
-import { Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Camera, Image as ImageIcon, Loader2, RotateCcw } from 'lucide-react';
 
 interface ImageUploaderProps {
   label: string;
@@ -8,7 +8,7 @@ interface ImageUploaderProps {
   onImageSelected: (image: ImageFile) => void;
   currentImage?: ImageFile | null;
   icon: React.ReactNode;
-  preferCamera?: boolean;
+  cameraFacing?: 'user' | 'environment'; // 'user' = selfie, 'environment' = zadná kamera
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ 
@@ -17,9 +17,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   onImageSelected, 
   currentImage,
   icon,
-  preferCamera = false
+  cameraFacing = 'environment'
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Helper to resize image to max dimensions to save data and speed up AI
@@ -69,7 +70,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     setIsProcessing(true);
     try {
       const resizedDataUrl = await resizeImage(file);
-      // Extract Base64 data
       const base64Data = resizedDataUrl.split(',')[1];
       
       onImageSelected({
@@ -82,22 +82,28 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       alert("Nepodarilo sa spracovať obrázok. Skúste iný.");
     } finally {
       setIsProcessing(false);
+      // Reset inputs so same file can be selected again if needed
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
     }
   };
 
-  const triggerSelect = () => {
-    fileInputRef.current?.click();
+  const triggerCamera = () => {
+    cameraInputRef.current?.click();
+  };
+
+  const triggerGallery = () => {
+    galleryInputRef.current?.click();
   };
 
   return (
     <div className="w-full flex flex-col items-center">
       <div 
-        onClick={triggerSelect}
         className={`
           relative w-full aspect-[3/4] max-w-sm rounded-2xl border-2 border-dashed 
-          flex flex-col items-center justify-center cursor-pointer transition-all duration-300
-          overflow-hidden shadow-sm touch-manipulation
-          ${currentImage ? 'border-purple-500 bg-purple-50' : 'border-slate-300 bg-white hover:bg-slate-50 active:bg-slate-100'}
+          flex flex-col items-center justify-center transition-all duration-300
+          overflow-hidden shadow-sm
+          ${currentImage ? 'border-purple-500 bg-purple-50' : 'border-slate-300 bg-white'}
         `}
       >
         {isProcessing ? (
@@ -106,43 +112,65 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             <span className="text-sm">Spracovávam fotku...</span>
           </div>
         ) : currentImage ? (
-          <img 
-            src={currentImage.preview} 
-            alt="Selected" 
-            className="w-full h-full object-cover"
-          />
+          <>
+            <img 
+              src={currentImage.preview} 
+              alt="Selected" 
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute bottom-4 right-4 flex gap-2">
+               <button 
+                onClick={triggerCamera}
+                className="p-3 bg-white/90 backdrop-blur text-slate-900 rounded-full shadow-lg hover:bg-white active:scale-95 transition-all"
+                title="Prefotiť"
+               >
+                 <RotateCcw className="w-5 h-5" />
+               </button>
+            </div>
+          </>
         ) : (
-          <div className="flex flex-col items-center text-center p-6 space-y-4">
-            <div className="p-4 bg-purple-100 text-purple-600 rounded-full shadow-sm">
+          <div className="flex flex-col items-center text-center p-6 w-full">
+            <div className="p-4 bg-purple-100 text-purple-600 rounded-full shadow-sm mb-4">
               {icon}
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800">{label}</h3>
-              <p className="text-sm text-slate-500 mt-1">{subLabel}</p>
-            </div>
-            <div className="flex gap-2">
-              <span className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg shadow-md flex items-center gap-2">
-                {preferCamera ? <Camera className="w-4 h-4"/> : <ImageIcon className="w-4 h-4"/>}
-                {preferCamera ? 'Odfotiť' : 'Vybrať fotku'}
-              </span>
+            <h3 className="text-lg font-semibold text-slate-800">{label}</h3>
+            <p className="text-sm text-slate-500 mt-1 mb-6">{subLabel}</p>
+            
+            <div className="flex flex-col w-full gap-3 max-w-[200px]">
+              <button 
+                onClick={triggerCamera}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 active:scale-95 transition-all shadow-md"
+              >
+                <Camera className="w-5 h-5" />
+                Odfotiť
+              </button>
+              <button 
+                onClick={triggerGallery}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 active:scale-95 transition-all"
+              >
+                <ImageIcon className="w-5 h-5" />
+                Galéria
+              </button>
             </div>
           </div>
         )}
-        
-        {currentImage && !isProcessing && (
-           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 active:opacity-100 transition-opacity">
-             <span className="text-white font-medium bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">
-               Zmeniť fotku
-             </span>
-           </div>
-        )}
       </div>
       
+      {/* Input pre kameru (spúšťa fotoaparát na mobile) */}
       <input
-        ref={fileInputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
-        capture={preferCamera ? "environment" : undefined}
+        capture={cameraFacing}
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* Input pre galériu (otvára výber súborov) */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
         className="hidden"
         onChange={handleFileChange}
       />
