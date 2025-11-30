@@ -23,6 +23,7 @@ export default async function handler(request: Request) {
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Using the specific image generation/editing model
     const model = 'gemini-2.5-flash-image';
 
     const prompt = `
@@ -62,6 +63,12 @@ export default async function handler(request: Request) {
     }
 
     if (!resultImage) {
+      // Ak model nevráti obrázok, pozrieme sa či nevrátil text (chybu/odmietnutie)
+      const textPart = response.candidates?.[0]?.content?.parts?.find(p => p.text);
+      if (textPart?.text) {
+        console.warn("Model returned text instead of image:", textPart.text);
+        throw new Error("AI sa nepodarilo vygenerovať obrázok. Skúste inú fotku.");
+      }
       throw new Error("Model did not return an image.");
     }
 
@@ -72,7 +79,15 @@ export default async function handler(request: Request) {
 
   } catch (error: any) {
     console.error("API Error:", error);
-    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
+    
+    let errorMessage = error.message || 'Internal Server Error';
+
+    // Better error message for the SERVICE_DISABLED case
+    if (JSON.stringify(error).includes('SERVICE_DISABLED') || errorMessage.includes('Generative Language API has not been used')) {
+      errorMessage = "Google API nie je povolené. Prosím kliknite na odkaz v konzole alebo kontaktujte správcu.";
+    }
+
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
