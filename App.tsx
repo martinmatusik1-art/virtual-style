@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Camera, Shirt, Sparkles, ChevronLeft, RotateCcw, Download, UserRound } from 'lucide-react';
+import { Camera, Sparkles, ChevronLeft, RotateCcw, Download, UserRound } from 'lucide-react';
 import ImageUploader from './components/ImageUploader';
 import LoadingScreen from './components/LoadingScreen';
 import { generateTryOnImage } from './services/geminiService';
@@ -62,29 +62,37 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto shadow-2xl overflow-hidden relative">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-slate-100 p-4 flex items-center justify-between pt-safe-top">
-        <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-slate-100 p-4 flex items-center justify-between pt-safe-top h-16">
+        <div className="flex items-center gap-1 w-20">
           {(step === AppStep.UPLOAD_CLOTHING || step === AppStep.RESULT) && (
-            <button onClick={handleBack} className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors">
-              <ChevronLeft className="w-6 h-6 text-slate-700" />
+            <button 
+              onClick={handleBack} 
+              className="flex items-center gap-0.5 p-2 -ml-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span className="text-sm font-medium">Späť</span>
             </button>
           )}
-          <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent select-none">
-            Virtual Style
-          </h1>
         </div>
-        {step === AppStep.RESULT && (
-           <button onClick={handleFullReset} className="text-sm font-medium text-slate-500 hover:text-purple-600 px-2 py-1">
-             Nová osoba
-           </button>
-        )}
+        
+        <h1 className="absolute left-1/2 transform -translate-x-1/2 text-lg font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent select-none">
+          Virtual Style
+        </h1>
+
+        <div className="w-20 flex justify-end">
+          {step === AppStep.RESULT && (
+             <button onClick={handleFullReset} className="text-xs font-medium text-slate-500 hover:text-purple-600 px-2 py-1">
+               Nová osoba
+             </button>
+          )}
+        </div>
       </header>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col p-6 overflow-y-auto no-scrollbar pb-safe-bottom">
         
         {/* Progress Indicators */}
-        <div className="flex gap-2 mb-8">
+        <div className="flex gap-2 mb-6">
           {[AppStep.UPLOAD_PERSON, AppStep.UPLOAD_CLOTHING, AppStep.RESULT].map((s, idx) => {
              const isActive = step === s || (step === AppStep.PROCESSING && s === AppStep.RESULT);
              let isPassed = false;
@@ -110,18 +118,18 @@ const App: React.FC = () => {
           <div className="flex flex-col gap-6 animate-fade-in">
              <div className="text-center">
               <h2 className="text-2xl font-bold text-slate-900">Tvoja fotka</h2>
-              <p className="text-slate-500 mt-2">Nahraj fotku celej postavy z galérie alebo sa odfoť.</p>
+              <p className="text-slate-500 mt-2">Odfotografuj sa alebo vyber fotku z galérie.</p>
             </div>
             <ImageUploader
-              label="Fotka postavy"
-              subLabel="Vyber z galérie alebo odfoť"
+              label="Postava"
+              subLabel="Ako chceš pridať fotku?"
               icon={<UserRound className="w-10 h-10" />}
               currentImage={personImage}
               onImageSelected={setPersonImage}
-              preferCamera={false} // Allow gallery access for person
+              cameraFacing="environment" // Pre celú postavu je lepšia zadná kamera (ak fotí niekto iný/zrkadlo)
             />
              <div className="p-4 bg-blue-50 rounded-xl text-sm text-blue-700">
-               💡 <strong>Tip:</strong> Použi fotku, kde stojíš rovno a máš na sebe jednoduché oblečenie.
+               💡 <strong>Tip:</strong> Postav sa tak, aby bolo vidieť celú postavu. Fotka by mala byť dobre osvetlená.
              </div>
           </div>
         )}
@@ -131,18 +139,18 @@ const App: React.FC = () => {
           <div className="flex flex-col gap-6 animate-fade-in">
              <div className="text-center">
               <h2 className="text-2xl font-bold text-slate-900">Oblečenie</h2>
-              <p className="text-slate-500 mt-2">Odfoť kus oblečenia v obchode.</p>
+              <p className="text-slate-500 mt-2">Odfotografuj kus oblečenia.</p>
             </div>
             <ImageUploader
-              label="Kus oblečenia"
-              subLabel="Klikni pre spustenie fotoaparátu"
+              label="Oblečenie"
+              subLabel="Ako chceš pridať fotku?"
               icon={<Camera className="w-10 h-10" />}
               currentImage={clothingImage}
               onImageSelected={setClothingImage}
-              preferCamera={true} // Prefer camera for clothing (shopping mode)
+              cameraFacing="environment"
             />
             <div className="p-4 bg-purple-50 rounded-xl text-sm text-purple-700">
-               💡 <strong>Tip:</strong> Oblečenie odfoť zavesené na vešiaku alebo položené, ideálne s dobrým svetlom.
+               💡 <strong>Tip:</strong> Oblečenie odfoť zavesené na vešiaku alebo položené na zemi.
              </div>
           </div>
         )}
