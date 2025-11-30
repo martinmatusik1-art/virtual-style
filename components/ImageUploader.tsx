@@ -47,13 +47,28 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             }
           }
 
+          // Ensure integer dimensions to prevent rendering artifacts on some devices
+          width = Math.floor(width);
+          height = Math.floor(height);
+
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
           
-          // Compress to JPEG 0.8 quality
-          resolve(canvas.toDataURL('image/jpeg', 0.8));
+          if (ctx) {
+            // FIX: Fill background with white first. 
+            // This prevents transparent images (PNGs) or canvas initialization glitches from turning black.
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw the image over the white background
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Compress to JPEG 0.8 quality
+            resolve(canvas.toDataURL('image/jpeg', 0.8));
+          } else {
+            reject(new Error("Canvas context failed"));
+          }
         };
         img.onerror = reject;
         img.src = event.target?.result as string;
